@@ -1,0 +1,19 @@
+{
+  "mqtt_host": "192.168.0.1",
+  "mqtt_port": 1883,
+  "mqtt_username": "",
+  "mqtt_password": "",
+  "mqtt_topic_detection": "observatory/meteors/detection",
+  "mqtt_topic_nightly": "observatory/meteors/nightly",
+  "telegram_token": "",
+  "telegram_chat_id": "",
+  "telegram_send_image": true,
+  "min_length": 100,
+  "cloud_area_threshold": 1550,
+  "watch_dir": "/home/youruser/meteors/incoming",
+  "annotated_dir": "/home/youruser/meteors/annotated",
+  "processed_dir": "/home/youruser/meteors/processed",
+  "mask": "/home/youruser/meteor_detector/mask.png",
+  "detections_log": "/home/youruser/meteors/detections.json",
+  "max_log_entries": 2000
+}

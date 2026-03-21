@@ -1,0 +1,64 @@
+/* StatCard — carte statistique avec barre colorée */
+.card {
+  position: relative;
+  padding: 1rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--muted);
+}
+
+.bar[data-color="accent"] {
+  background: var(--accent);
+}
+
+.bar[data-color="green"] {
+  background: var(--green);
+}
+
+.bar[data-color="orange"] {
+  background: var(--accent2);
+}
+
+.label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+  padding-left: 0.5rem;
+}
+
+.value {
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  padding-left: 0.5rem;
+}
+
+.value[data-color="accent"] {
+  color: var(--accent);
+}
+
+.value[data-color="green"] {
+  color: var(--green);
+}
+
+.value[data-color="orange"] {
+  color: var(--accent2);
+}
+
+.sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+  padding-left: 0.5rem;
+}

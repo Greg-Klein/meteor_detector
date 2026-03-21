@@ -1,0 +1,5 @@
+# Local config (may contain tokens/passwords)
+config.json
+
+# OS
+.DS_Store

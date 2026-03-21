@@ -1,0 +1,14 @@
+[Unit]
+Description=Meteor Watchdog - Détection météores temps réel
+After=network.target
+
+[Service]
+Type=simple
+User=youruser
+WorkingDirectory=/home/youruser/meteor_detector
+ExecStart=/usr/bin/python3 /home/youruser/meteor_detector/meteor_watcher.py --config /home/youruser/meteor_detector/config.json
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

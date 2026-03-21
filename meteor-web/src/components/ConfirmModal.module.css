@@ -1,0 +1,64 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(5, 7, 13, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.5rem;
+  max-width: 320px;
+  width: 100%;
+}
+
+.text {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.cancel {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.cancel:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.confirm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  background: transparent;
+  color: #f87171;
+  border: 1px solid #f87171;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.confirm:hover {
+  background: #f87171;
+  color: #05070d;
+}

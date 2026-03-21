@@ -1,0 +1,57 @@
+/* globals.css — AllSky Meteor Dashboard */
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap');
+
+:root {
+  --bg:      #05070d;
+  --bg2:     #0a0f1e;
+  --bg3:     #0f1628;
+  --border:  #1a2840;
+  --accent:  #00d4ff;
+  --accent2: #ff7b35;
+  --green:   #39ffa0;
+  --text:    #b8cce4;
+  --muted:   #4a6280;
+  --font:    'Syne', sans-serif;
+  --mono:    'Share Tech Mono', monospace;
+  --r:       8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Champ d'étoiles fixe */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at  9% 14%, rgba(255,255,255,.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 23% 67%, rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 37% 31%, rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 54% 82%, rgba(255,255,255,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 68%  6%, rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 79% 48%, rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 91% 73%, rgba(255,255,255,.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 15% 91%, rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 46% 19%, rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 83% 28%, rgba(255,255,255,.5) 0%,transparent 100%),
+    radial-gradient(2px 2px at  4% 43%, rgba(0,212,255,.5)   0%,transparent 100%),
+    radial-gradient(2px 2px at 62% 58%, rgba(0,212,255,.35)  0%,transparent 100%),
+    radial-gradient(2px 2px at 88% 11%, rgba(0,212,255,.4)   0%,transparent 100%);
+}
+
+/* Lueur diffuse au centre */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,80,140,.18) 0%, transparent 70%);
+}
