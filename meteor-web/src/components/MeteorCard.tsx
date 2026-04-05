@@ -10,16 +10,20 @@ import ConfirmModal from "./ConfirmModal";
 interface Props {
   detection: Detection;
   onFalsePositive?: () => void;
+  onMarkPositive?: () => void;
 }
 
 function formatTime(iso: string): string {
   return iso.replace("T", " ").slice(0, 19);
 }
 
-export default function MeteorCard({ detection, onFalsePositive }: Props) {
+export default function MeteorCard({ detection, onFalsePositive, onMarkPositive }: Props) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [markingPositive, setMarkingPositive] = useState(false);
+  const [positiveMarked, setPositiveMarked] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [positiveConfirmOpen, setPositiveConfirmOpen] = useState(false);
   const imgSrc = detection.annotated_filename
     ? `/api/images/${detection.annotated_filename}`
     : null;
@@ -56,19 +60,38 @@ export default function MeteorCard({ detection, onFalsePositive }: Props) {
               <span className={styles.chipMuted}>{detection.image}</span>
             </div>
           )}
-          {onFalsePositive && (
-            <button
-              type="button"
-              className={styles.falsePositiveBtn}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (removing) return;
-                setConfirmOpen(true);
-              }}
-              disabled={removing}
-            >
-              {removing ? "…" : "Faux positif"}
-            </button>
+          {(onMarkPositive || onFalsePositive) && (
+            <div className={styles.actions}>
+              {onMarkPositive && (
+                <button
+                  type="button"
+                  className={styles.positiveBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (markingPositive || positiveMarked) return;
+                    setPositiveConfirmOpen(true);
+                  }}
+                  disabled={markingPositive || positiveMarked}
+                >
+                  {positiveMarked ? "Marquee" : markingPositive ? "…" : "Valider"}
+                </button>
+              )}
+
+              {onFalsePositive && (
+                <button
+                  type="button"
+                  className={styles.falsePositiveBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (removing) return;
+                    setConfirmOpen(true);
+                  }}
+                  disabled={removing}
+                >
+                  {removing ? "…" : "Faux positif"}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -83,7 +106,7 @@ export default function MeteorCard({ detection, onFalsePositive }: Props) {
 
       {confirmOpen && (
         <ConfirmModal
-          message="Exclure cette détection (faux positif) ? Elle sera retirée des stats et l'image supprimée."
+          message="Exclure cette détection comme faux positif ? Elle sera retirée du site et archivée dans le dataset des faux positifs."
           confirmLabel="Exclure"
           onCancel={() => setConfirmOpen(false)}
           onConfirm={() => {
@@ -98,6 +121,30 @@ export default function MeteorCard({ detection, onFalsePositive }: Props) {
                 if (res.ok) onFalsePositive?.();
               })
               .finally(() => setRemoving(false));
+          }}
+        />
+      )}
+
+      {positiveConfirmOpen && (
+        <ConfirmModal
+          message="Valider cette détection comme positive pour l'entraînement ? L'image source sera archivée dans le dataset des positifs."
+          confirmLabel="Valider"
+          onCancel={() => setPositiveConfirmOpen(false)}
+          onConfirm={() => {
+            setPositiveConfirmOpen(false);
+            setMarkingPositive(true);
+            fetch("/api/detections/positive", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ timestamp: detection.timestamp }),
+            })
+              .then((res) => {
+                if (res.ok) {
+                  setPositiveMarked(true);
+                  onMarkPositive?.();
+                }
+              })
+              .finally(() => setMarkingPositive(false));
           }}
         />
       )}

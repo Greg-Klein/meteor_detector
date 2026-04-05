@@ -57,6 +57,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
 
     # Stockage
     "annotated_dir": "/home/youruser/meteors/annotated",
+    "positive_dataset_dir": "/home/youruser/meteors/dataset/positives",
     "processed_dir": "/home/youruser/meteors/processed",
     "watch_dir": "/home/youruser/meteors/incoming",
 
@@ -74,6 +75,19 @@ def load_config(path: Path | None) -> dict[str, Any]:
     if path and path.exists():
         with open(path, encoding="utf-8") as f:
             cfg.update(json.load(f))
+
+    meteors_root = Path(cfg["detections_log"]).expanduser().parent
+    derived_paths = {
+        "annotated_dir": str(meteors_root / "annotated"),
+        "processed_dir": str(meteors_root / "processed"),
+        "watch_dir": str(meteors_root / "incoming"),
+        "positive_dataset_dir": str(meteors_root / "dataset" / "positives"),
+        "false_positive_dir": str(meteors_root / "dataset" / "false_positives"),
+    }
+
+    for key, derived_value in derived_paths.items():
+        if cfg.get(key) == DEFAULT_CONFIG.get(key):
+            cfg[key] = derived_value
     return cfg
 
 
@@ -125,6 +139,7 @@ def detect_meteors(img_path: Path, cfg: dict[str, Any]) -> dict[str, Any]:
     if img is None:
         raise FileNotFoundError(f"Impossible de lire : {img_path}")
 
+    detected_at = datetime.now()
     h, w = img.shape[:2]
     min_length = int(cfg["min_length"])
     max_length = int(cfg.get("max_length", 850))
@@ -134,7 +149,7 @@ def detect_meteors(img_path: Path, cfg: dict[str, Any]) -> dict[str, Any]:
         log.warning(f"Image tronquée détectée ({w}x{h}), ignorée : {img_path.name}")
         return {
             "image": str(img_path),
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": detected_at.isoformat(),
             "meteor_count": 0,
             "detections": [],
             "annotated_path": None,
@@ -198,23 +213,33 @@ def detect_meteors(img_path: Path, cfg: dict[str, Any]) -> dict[str, Any]:
 
     # 7) Image annotée si détection
     annotated_path: Path | None = None
+    dataset_image_path: Path | None = None
     if detections:
+        night = detected_at.strftime("%Y-%m-%d")
+
+        dataset_dir = Path(cfg["positive_dataset_dir"]) / night
+        dataset_dir.mkdir(parents=True, exist_ok=True)
+        dataset_image_path = dataset_dir / img_path.name
+        cv2.imwrite(str(dataset_image_path), img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+        log.info(f"Image positive sauvegardée pour dataset : {dataset_image_path}")
+
         annotated_dir = Path(cfg["annotated_dir"])
         annotated_dir.mkdir(parents=True, exist_ok=True)
         annotated = img.copy()
         for d in detections:
             cv2.line(annotated, (d["x1"], d["y1"]), (d["x2"], d["y2"]), (0, 255, 0), 10)
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        ts = detected_at.strftime("%Y%m%d_%H%M%S")
         annotated_path = annotated_dir / f"{img_path.stem}_{ts}_annotated.jpg"
         cv2.imwrite(str(annotated_path), annotated, [int(cv2.IMWRITE_JPEG_QUALITY), 92])
         log.info(f"Image annotée sauvegardée : {annotated_path}")
 
     return {
         "image": str(img_path),
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": detected_at.isoformat(),
         "meteor_count": len(detections),
         "detections": detections,
         "annotated_path": str(annotated_path) if annotated_path else None,
+        "dataset_image_path": str(dataset_image_path) if dataset_image_path else None,
     }
 
 
@@ -324,7 +349,11 @@ def process_image(img_path: Path, cfg: dict[str, Any], move_processed: bool = Tr
         log.info(f"Image déplacée vers {dest}")
 
         # Sauvegarder le JSON de résultat pour meteor_nightly_report.py
-        result_for_json = {k: v for k, v in result.items() if k != "annotated_path"}
+        result_for_json = {
+            k: v
+            for k, v in result.items()
+            if k not in {"annotated_path", "dataset_image_path"}
+        }
         result_for_json["image"] = str(dest)
         json_dest = processed_dir / f"{img_path.stem}_meteor.json"
         with open(json_dest, "w", encoding="utf-8") as f:

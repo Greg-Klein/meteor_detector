@@ -28,14 +28,20 @@ describe('MeteorCard', () => {
     expect(screen.getByText('141 px')).toBeInTheDocument()
   })
 
-  it('does not render the false positive button without onFalsePositive', () => {
+  it('does not render the action buttons without callbacks', () => {
     render(<MeteorCard detection={detection} />)
     expect(screen.queryByRole('button', { name: 'Faux positif' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Valider' })).not.toBeInTheDocument()
   })
 
   it('renders the false positive button when onFalsePositive is provided', () => {
     render(<MeteorCard detection={detection} onFalsePositive={() => {}} />)
     expect(screen.getByRole('button', { name: 'Faux positif' })).toBeInTheDocument()
+  })
+
+  it('renders the positive button when onMarkPositive is provided', () => {
+    render(<MeteorCard detection={detection} onMarkPositive={() => {}} />)
+    expect(screen.getByRole('button', { name: 'Valider' })).toBeInTheDocument()
   })
 
   it('opens the confirm modal on false positive button click', async () => {
@@ -72,6 +78,28 @@ describe('MeteorCard', () => {
         })
       )
       expect(onFalsePositive).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('calls fetch and marks the detection as positive when confirming', async () => {
+    const user = userEvent.setup()
+    const onMarkPositive = jest.fn()
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true })
+
+    render(<MeteorCard detection={detection} onMarkPositive={onMarkPositive} />)
+    await user.click(screen.getByRole('button', { name: 'Valider' }))
+    await user.click(screen.getAllByRole('button', { name: 'Valider' })[1])
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/detections/positive',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ timestamp: detection.timestamp }),
+        })
+      )
+      expect(onMarkPositive).toHaveBeenCalledTimes(1)
+      expect(screen.getByRole('button', { name: 'Marquee' })).toBeDisabled()
     })
   })
 

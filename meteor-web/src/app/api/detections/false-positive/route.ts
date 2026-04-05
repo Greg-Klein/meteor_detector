@@ -1,5 +1,5 @@
 // app/api/detections/false-positive/route.ts
-// Marque une détection comme faux positif : retire du JSON et supprime l'image annotée
+// Archive un faux positif pour le dataset, puis le retire du JSON centralisé
 
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
@@ -8,6 +8,8 @@ import {
   loadDetections,
   saveDetections,
   ANNOTATED_DIR,
+  FALSE_POSITIVE_DIR,
+  PROCESSED_DIR,
 } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +43,19 @@ export async function POST(req: NextRequest) {
 
   const removed = detections[index];
   const annotatedFile = removed.annotated_filename;
+  const archiveDir = path.join(FALSE_POSITIVE_DIR, removed.night || "unknown");
+  fs.mkdirSync(archiveDir, { recursive: true });
+
+  const sourceImagePath = path.join(
+    PROCESSED_DIR,
+    removed.night || "unknown",
+    path.basename(removed.image),
+  );
+  const archivedImagePath = path.join(archiveDir, path.basename(removed.image));
+
+  if (fs.existsSync(sourceImagePath) && !fs.existsSync(archivedImagePath)) {
+    fs.copyFileSync(sourceImagePath, archivedImagePath);
+  }
 
   const nextList = detections.filter((d) => d.timestamp !== timestamp);
   saveDetections(nextList);
@@ -49,16 +64,25 @@ export async function POST(req: NextRequest) {
     const filePath = path.join(ANNOTATED_DIR, path.basename(annotatedFile));
     if (fs.existsSync(filePath)) {
       try {
-        fs.unlinkSync(filePath);
+        const archivedAnnotatedPath = path.join(archiveDir, path.basename(annotatedFile));
+        if (!fs.existsSync(archivedAnnotatedPath)) {
+          fs.copyFileSync(filePath, archivedAnnotatedPath);
+        }
       } catch (err) {
-        console.error("Impossible de supprimer l'image annotée:", filePath, err);
+        console.error("Impossible d'archiver l'image annotée:", filePath, err);
         return NextResponse.json(
-          { ok: true, warning: "Détection retirée mais fichier image non supprimé" },
+          { ok: true, warning: "Détection retirée mais image annotée non archivée" },
           { status: 200 }
         );
       }
     }
   }
+
+  const metadataPath = path.join(
+    archiveDir,
+    `${path.parse(path.basename(removed.image)).name}.json`,
+  );
+  fs.writeFileSync(metadataPath, JSON.stringify(removed, null, 2), "utf-8");
 
   return NextResponse.json({ ok: true });
 }

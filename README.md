@@ -21,6 +21,9 @@ Pipeline complet de détection de météores avec notification temps réel, bila
 /home/youruser/meteors/
 ├── incoming/                   # Destination SCP depuis Pi AllSky
 ├── annotated/                  # Images annotées (météores détectés)
+├── dataset/
+│   ├── positives/              # Images brutes avec météore détecté (sans overlay)
+│   └── false_positives/        # Faux positifs archivés pour entraînement
 ├── processed/                  # Sous-dossiers YYYY-MM-DD (images + JSON par nuit)
 └── detections.json             # Log centralisé (alimente le dashboard)
 ```
@@ -59,7 +62,7 @@ Copier l’exemple puis éditer (tokens, chemins, MQTT, etc.) :
 cp config.example.json config.json
 ```
 
-Voir `config.example.json` pour toutes les options. Exemples : `mqtt_host`, `mqtt_port`, `telegram_token`, `telegram_chat_id`, `watch_dir`, `annotated_dir`, `processed_dir`, `mask`, `detections_log`, `min_length`, `max_length`, `cloud_area_threshold`, `telegram_send_image`, `max_log_entries`.
+Voir `config.example.json` pour toutes les options. Exemples : `mqtt_host`, `mqtt_port`, `telegram_token`, `telegram_chat_id`, `watch_dir`, `annotated_dir`, `positive_dataset_dir`, `processed_dir`, `false_positive_dir`, `mask`, `detections_log`, `min_length`, `max_length`, `cloud_area_threshold`, `telegram_send_image`, `max_log_entries`.
 
 ---
 
@@ -188,6 +191,48 @@ python3 meteor_nightly_report.py --config config.json --hours 24
 # Simuler le nettoyage (sans supprimer)
 python3 meteor_cleanup.py --config config.json --dry-run
 ```
+
+---
+
+## 🧠 Constitution du dataset
+
+Le tableau de bord permet maintenant de constituer un dataset d'entraînement directement depuis les détections affichées.
+
+### Images positives
+
+- Quand le pipeline détecte un météore, l'image source est copiée sans overlay vert dans `dataset/positives/<YYYY-MM-DD>/`.
+- Depuis l'interface web, le bouton `Valider` permet aussi de marquer manuellement une détection comme positive.
+- Cette action archive :
+  - l'image source depuis `processed/<YYYY-MM-DD>/`
+  - l'image annotée si elle existe
+  - un fichier JSON de métadonnées avec `timestamp`, `image`, `detections`, etc.
+
+### Faux positifs
+
+- Le bouton `Faux positif` retire la détection du site.
+- En même temps, l'image n'est plus supprimée : elle est archivée dans `dataset/false_positives/<YYYY-MM-DD>/`.
+- Cette archive contient :
+  - l'image source
+  - l'image annotée si elle existe
+  - un JSON de métadonnées
+
+### Structure obtenue
+
+```text
+/home/youruser/meteors/dataset/
+├── positives/
+│   └── 2026-04-05/
+│       ├── frame_001.jpg
+│       ├── frame_001_20260405_221530_annotated.jpg
+│       └── frame_001.json
+└── false_positives/
+    └── 2026-04-05/
+        ├── frame_002.jpg
+        ├── frame_002_20260405_221742_annotated.jpg
+        └── frame_002.json
+```
+
+Ce mécanisme permet de construire progressivement un dataset supervisé directement à partir de l'exploitation réelle du système, sans passer tout de suite par un outil d'annotation séparé.
 
 ---
 

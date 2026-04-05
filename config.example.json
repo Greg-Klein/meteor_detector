@@ -12,7 +12,9 @@
   "cloud_area_threshold": 1550,
   "watch_dir": "/home/youruser/meteors/incoming",
   "annotated_dir": "/home/youruser/meteors/annotated",
+  "positive_dataset_dir": "/home/youruser/meteors/dataset/positives",
   "processed_dir": "/home/youruser/meteors/processed",
+  "false_positive_dir": "/home/youruser/meteors/dataset/false_positives",
   "mask": "/home/youruser/meteor_detector/mask.png",
   "detections_log": "/home/youruser/meteors/detections.json",
   "max_log_entries": 2000

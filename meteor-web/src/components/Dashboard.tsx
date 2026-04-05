@@ -166,6 +166,7 @@ export default function Dashboard() {
               <MeteorCard
                 key={`${d.timestamp}-${i}`}
                 detection={d}
+                onMarkPositive={() => {}}
                 onFalsePositive={fetchData}
               />
             ))}

@@ -4,6 +4,7 @@
 
 import { Detection, NightSummary, Stats } from "@/types/meteor";
 import fs from "fs";
+import path from "path";
 import { getCurrentNightKey, getNightKey } from "./nightUtils";
 
 // Chemin vers le fichier JSON produit par le pipeline Python
@@ -11,8 +12,21 @@ import { getCurrentNightKey, getNightKey } from "./nightUtils";
 const DETECTIONS_LOG =
   process.env.DETECTIONS_LOG || "/home/youruser/meteors/detections.json";
 
+const METEORS_ROOT = path.dirname(DETECTIONS_LOG);
+
 export const ANNOTATED_DIR =
-  process.env.ANNOTATED_DIR || "/home/youruser/meteors/annotated";
+  process.env.ANNOTATED_DIR || path.join(METEORS_ROOT, "annotated");
+
+export const PROCESSED_DIR =
+  process.env.PROCESSED_DIR || path.join(METEORS_ROOT, "processed");
+
+export const FALSE_POSITIVE_DIR =
+  process.env.FALSE_POSITIVE_DIR ||
+  path.join(METEORS_ROOT, "dataset", "false_positives");
+
+export const POSITIVE_DATASET_DIR =
+  process.env.POSITIVE_DATASET_DIR ||
+  path.join(METEORS_ROOT, "dataset", "positives");
 
 export function loadDetections(): Detection[] {
   try {
