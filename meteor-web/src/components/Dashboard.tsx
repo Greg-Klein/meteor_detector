@@ -13,13 +13,18 @@ const REFRESH_INTERVAL_MS = 60_000; // 60 secondes
 
 interface ApiResponse {
   detections: Detection[];
+  positives: Detection[];
+  falsePositives: Detection[];
   stats: Stats;
   nights: NightSummary[];
 }
 
+type GalleryTab = "detections" | "positives" | "falsePositives";
+
 export default function Dashboard() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [activeNight, setActiveNight] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<GalleryTab>("detections");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [clock, setClock] = useState("");
 
@@ -54,10 +59,18 @@ export default function Dashboard() {
   }, []);
 
   // Filtrage des détections selon la nuit sélectionnée
+  const tabDetections = data
+    ? activeTab === "positives"
+      ? data.positives
+      : activeTab === "falsePositives"
+        ? data.falsePositives
+        : data.detections
+    : [];
+
   const visibleDetections = data
     ? activeNight
-      ? data.detections.filter((d) => d.night === activeNight)
-      : data.detections
+      ? tabDetections.filter((d) => d.night === activeNight)
+      : tabDetections
     : [];
 
   return (
@@ -133,9 +146,36 @@ export default function Dashboard() {
 
       {/* ── GALERIE ── */}
       <section className={styles.section}>
+        <div className={styles.tabs}>
+          <button
+            className={activeTab === "detections" ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab("detections")}
+          >
+            Detections
+          </button>
+          <button
+            className={activeTab === "positives" ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab("positives")}
+          >
+            Positifs
+          </button>
+          <button
+            className={activeTab === "falsePositives" ? styles.tabActive : styles.tab}
+            onClick={() => setActiveTab("falsePositives")}
+          >
+            Faux positifs
+          </button>
+        </div>
+
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
-            {activeNight ? `Nuit du ${activeNight}` : "Tous les météores"}
+            {activeNight
+              ? `Nuit du ${activeNight}`
+              : activeTab === "positives"
+                ? "Images positives"
+                : activeTab === "falsePositives"
+                  ? "Images faux positifs"
+                  : "Tous les météores"}
           </h2>
           <span className={styles.count}>
             {visibleDetections.length} image(s)
@@ -155,7 +195,11 @@ export default function Dashboard() {
             <p>
               {activeNight
                 ? "Aucun météore détecté cette nuit-là."
-                : "Aucun météore détecté pour l'instant."}
+                : activeTab === "positives"
+                  ? "Aucune image positive archivée pour l'instant."
+                  : activeTab === "falsePositives"
+                    ? "Aucun faux positif archivé pour l'instant."
+                    : "Aucun météore détecté pour l'instant."}
             </p>
           </div>
         )}
@@ -166,8 +210,8 @@ export default function Dashboard() {
               <MeteorCard
                 key={`${d.timestamp}-${i}`}
                 detection={d}
-                onMarkPositive={() => {}}
-                onFalsePositive={fetchData}
+                onMarkPositive={activeTab === "detections" ? () => {} : undefined}
+                onFalsePositive={activeTab === "detections" ? fetchData : undefined}
               />
             ))}
           </div>

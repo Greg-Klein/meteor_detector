@@ -28,6 +28,68 @@ export const POSITIVE_DATASET_DIR =
   process.env.POSITIVE_DATASET_DIR ||
   path.join(METEORS_ROOT, "dataset", "positives");
 
+function listJsonFiles(root: string): string[] {
+  if (!fs.existsSync(root)) return [];
+
+  const results: string[] = [];
+  const stack = [root];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) continue;
+
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+      } else if (entry.isFile() && entry.name.endsWith(".json")) {
+        results.push(fullPath);
+      }
+    }
+  }
+
+  return results;
+}
+
+function resolveAnnotatedFilenameFromArchive(
+  archiveDir: string,
+  fallbackImageName: string,
+): string | null {
+  const files = fs.readdirSync(archiveDir);
+  const annotated = files.find((name) => name.endsWith("_annotated.jpg"));
+  if (annotated) return annotated;
+
+  const jpg = files.find((name) => name === fallbackImageName);
+  return jpg || null;
+}
+
+export function loadArchivedDetections(rootDir: string): Detection[] {
+  const jsonFiles = listJsonFiles(rootDir);
+
+  return jsonFiles
+    .map((jsonPath) => {
+      try {
+        const raw = fs.readFileSync(jsonPath, "utf-8");
+        const parsed = JSON.parse(raw) as Partial<Detection>;
+        const archiveDir = path.dirname(jsonPath);
+        const imageName = path.basename(parsed.image || path.basename(jsonPath, ".json"));
+
+        return {
+          timestamp: parsed.timestamp || new Date(0).toISOString(),
+          image: imageName,
+          meteor_count: parsed.meteor_count ?? 0,
+          detections: parsed.detections || [],
+          annotated_filename:
+            resolveAnnotatedFilenameFromArchive(archiveDir, imageName),
+          night: parsed.night || path.basename(path.dirname(jsonPath)),
+        } satisfies Detection;
+      } catch {
+        return null;
+      }
+    })
+    .filter((item): item is Detection => item !== null)
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+}
+
 export function loadDetections(): Detection[] {
   try {
     if (!fs.existsSync(DETECTIONS_LOG)) return [];
