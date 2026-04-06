@@ -240,7 +240,7 @@ Ce mécanisme permet de construire progressivement un dataset supervisé directe
 
 | Paramètre              | Défaut | Effet                                                              |
 | ---------------------- | ------ | ------------------------------------------------------------------ |
-| `min_length`           | 100    | Longueur minimale en px — augmenter pour réduire les faux positifs |
+| `min_length`           | 45     | Longueur minimale en px — augmenter pour réduire les faux positifs |
 | `max_length`           | 2500   | Longueur max en px — segments plus longs ignorés (satellites, etc.) |
 | `cloud_area_threshold` | 1550   | Seuil contours nuages — adapter à ta résolution caméra             |
 | `telegram_send_image`  | true   | Envoyer l’image annotée sur Telegram                               |

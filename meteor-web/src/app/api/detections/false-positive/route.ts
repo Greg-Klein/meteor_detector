@@ -9,6 +9,7 @@ import {
   saveDetections,
   ANNOTATED_DIR,
   FALSE_POSITIVE_DIR,
+  POSITIVE_DATASET_DIR,
   PROCESSED_DIR,
 } from "@/lib/data";
 
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
   const removed = detections[index];
   const annotatedFile = removed.annotated_filename;
   const archiveDir = path.join(FALSE_POSITIVE_DIR, removed.night || "unknown");
+  const positiveDir = path.join(POSITIVE_DATASET_DIR, removed.night || "unknown");
   fs.mkdirSync(archiveDir, { recursive: true });
 
   const sourceImagePath = path.join(
@@ -83,6 +85,29 @@ export async function POST(req: NextRequest) {
     `${path.parse(path.basename(removed.image)).name}.json`,
   );
   fs.writeFileSync(metadataPath, JSON.stringify(removed, null, 2), "utf-8");
+
+  // Retirer cette image du dataset des positifs si elle y avait été copiée automatiquement
+  // ou validée manuellement depuis le dashboard.
+  const positiveArtifacts = [
+    path.join(positiveDir, path.basename(removed.image)),
+    path.join(
+      positiveDir,
+      `${path.parse(path.basename(removed.image)).name}.json`,
+    ),
+  ];
+  if (annotatedFile) {
+    positiveArtifacts.push(path.join(positiveDir, path.basename(annotatedFile)));
+  }
+
+  for (const artifactPath of positiveArtifacts) {
+    if (fs.existsSync(artifactPath)) {
+      try {
+        fs.unlinkSync(artifactPath);
+      } catch (err) {
+        console.error("Impossible de retirer l'artefact du dataset positif:", artifactPath, err);
+      }
+    }
+  }
 
   return NextResponse.json({ ok: true });
 }

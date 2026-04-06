@@ -51,7 +51,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "telegram_send_image": True,
 
     # Détection
-    "min_length": 100,
+    "min_length": 45,
     "max_length": 2500,
     "cloud_area_threshold": 1550,
 
@@ -213,16 +213,7 @@ def detect_meteors(img_path: Path, cfg: dict[str, Any]) -> dict[str, Any]:
 
     # 7) Image annotée si détection
     annotated_path: Path | None = None
-    dataset_image_path: Path | None = None
     if detections:
-        night = detected_at.strftime("%Y-%m-%d")
-
-        dataset_dir = Path(cfg["positive_dataset_dir"]) / night
-        dataset_dir.mkdir(parents=True, exist_ok=True)
-        dataset_image_path = dataset_dir / img_path.name
-        cv2.imwrite(str(dataset_image_path), img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
-        log.info(f"Image positive sauvegardée pour dataset : {dataset_image_path}")
-
         annotated_dir = Path(cfg["annotated_dir"])
         annotated_dir.mkdir(parents=True, exist_ok=True)
         annotated = img.copy()
@@ -239,7 +230,6 @@ def detect_meteors(img_path: Path, cfg: dict[str, Any]) -> dict[str, Any]:
         "meteor_count": len(detections),
         "detections": detections,
         "annotated_path": str(annotated_path) if annotated_path else None,
-        "dataset_image_path": str(dataset_image_path) if dataset_image_path else None,
     }
 
 
@@ -349,11 +339,7 @@ def process_image(img_path: Path, cfg: dict[str, Any], move_processed: bool = Tr
         log.info(f"Image déplacée vers {dest}")
 
         # Sauvegarder le JSON de résultat pour meteor_nightly_report.py
-        result_for_json = {
-            k: v
-            for k, v in result.items()
-            if k not in {"annotated_path", "dataset_image_path"}
-        }
+        result_for_json = {k: v for k, v in result.items() if k != "annotated_path"}
         result_for_json["image"] = str(dest)
         json_dest = processed_dir / f"{img_path.stem}_meteor.json"
         with open(json_dest, "w", encoding="utf-8") as f:

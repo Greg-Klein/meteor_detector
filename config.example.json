@@ -8,7 +8,7 @@
   "telegram_token": "",
   "telegram_chat_id": "",
   "telegram_send_image": true,
-  "min_length": 100,
+  "min_length": 45,
   "cloud_area_threshold": 1550,
   "watch_dir": "/home/youruser/meteors/incoming",
   "annotated_dir": "/home/youruser/meteors/annotated",
