@@ -6,6 +6,7 @@ import path from "path";
 import fs from "fs";
 import {
   loadDetections,
+  saveDetections,
   ANNOTATED_DIR,
   POSITIVE_DATASET_DIR,
   PROCESSED_DIR,
@@ -75,6 +76,9 @@ export async function POST(req: NextRequest) {
     `${path.parse(path.basename(detection.image)).name}.json`,
   );
   fs.writeFileSync(metadataPath, JSON.stringify(detection, null, 2), "utf-8");
+
+  const nextList = detections.filter((d) => d.timestamp !== timestamp);
+  saveDetections(nextList);
 
   return NextResponse.json({ ok: true });
 }

@@ -53,6 +53,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # Détection
     "min_length": 45,
     "max_length": 2500,
+    "hough_threshold": 120,
+    "max_line_gap": 8,
+    "dilation_iterations": 1,
     "cloud_area_threshold": 1550,
 
     # Stockage
@@ -163,7 +166,7 @@ def detect_meteors(img_path: Path, cfg: dict[str, Any]) -> dict[str, Any]:
 
     # 3) Dilate + erode
     kernel = np.ones((3, 3), np.uint8)
-    dilation = cv2.dilate(canny, kernel, iterations=2)
+    dilation = cv2.dilate(canny, kernel, iterations=int(cfg.get("dilation_iterations", 1)))
     dilation = cv2.erode(dilation, kernel, iterations=1)
 
     # 4) Masque nuages (contours > seuil)
@@ -192,7 +195,14 @@ def detect_meteors(img_path: Path, cfg: dict[str, Any]) -> dict[str, Any]:
             log.warning(f"Masque introuvable : {mask_path}")
 
     # 6) HoughLinesP
-    lines = cv2.HoughLinesP(dilation, 3, np.pi / 180, 100, minLineLength=min_length, maxLineGap=20)
+    lines = cv2.HoughLinesP(
+        dilation,
+        3,
+        np.pi / 180,
+        int(cfg.get("hough_threshold", 120)),
+        minLineLength=min_length,
+        maxLineGap=int(cfg.get("max_line_gap", 8)),
+    )
 
     segments: list[dict[str, Any]] = []
     if lines is not None:

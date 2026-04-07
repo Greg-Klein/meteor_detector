@@ -242,6 +242,9 @@ Ce mécanisme permet de construire progressivement un dataset supervisé directe
 | ---------------------- | ------ | ------------------------------------------------------------------ |
 | `min_length`           | 45     | Longueur minimale en px — augmenter pour réduire les faux positifs |
 | `max_length`           | 2500   | Longueur max en px — segments plus longs ignorés (satellites, etc.) |
+| `hough_threshold`      | 120    | Votes minimum Hough — augmenter pour exiger des traits plus nets   |
+| `max_line_gap`         | 8      | Écart max entre segments alignés — réduire pour éviter les étoiles |
+| `dilation_iterations`  | 1      | Dilatation avant Hough — réduire pour moins relier les points      |
 | `cloud_area_threshold` | 1550   | Seuil contours nuages — adapter à ta résolution caméra             |
 | `telegram_send_image`  | true   | Envoyer l’image annotée sur Telegram                               |
 | `max_log_entries`      | 2000   | Nombre max d’entrées dans detections.json (dashboard)              |

@@ -55,7 +55,12 @@ function resolveAnnotatedFilenameFromArchive(
   fallbackImageName: string,
 ): string | null {
   const files = fs.readdirSync(archiveDir);
-  const annotated = files.find((name) => name.endsWith("_annotated.jpg"));
+  const imageStem = path.parse(fallbackImageName).name;
+  const annotated = files.find(
+    (name) =>
+      name.endsWith("_annotated.jpg") &&
+      path.parse(name).name.startsWith(`${imageStem}_`),
+  );
   if (annotated) return annotated;
 
   const jpg = files.find((name) => name === fallbackImageName);

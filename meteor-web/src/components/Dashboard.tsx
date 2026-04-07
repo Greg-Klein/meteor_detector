@@ -210,7 +210,7 @@ export default function Dashboard() {
               <MeteorCard
                 key={`${d.timestamp}-${i}`}
                 detection={d}
-                onMarkPositive={activeTab === "detections" ? () => {} : undefined}
+                onMarkPositive={activeTab === "detections" ? fetchData : undefined}
                 onFalsePositive={activeTab === "detections" ? fetchData : undefined}
               />
             ))}
