@@ -45,7 +45,9 @@ class MeteorHandler(FileSystemEventHandler):
         if event.is_directory:
             return
 
-        path = Path(event.src_path)
+        self.process_path(Path(event.src_path))
+
+    def process_path(self, path: Path) -> None:
         if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
             return
 
@@ -103,6 +105,18 @@ def main() -> int:
     log.info(f"Surveillance de : {watch_dir}")
 
     handler = MeteorHandler(cfg)
+
+    # Traiter aussi les fichiers déjà présents au démarrage.
+    existing_files = sorted(
+        path
+        for path in watch_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS
+    )
+    if existing_files:
+        log.info(f"{len(existing_files)} image(s) déjà présentes au démarrage, traitement initial...")
+        for path in existing_files:
+            handler.process_path(path)
+
     observer = Observer()
     observer.schedule(handler, str(watch_dir), recursive=False)
     observer.start()
