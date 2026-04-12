@@ -14,6 +14,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const DATASET_META_DIRNAME = "_meta";
+
 export async function POST(req: NextRequest) {
   let body: { timestamp: string };
   try {
@@ -43,7 +45,9 @@ export async function POST(req: NextRequest) {
   }
 
   const archiveDir = path.join(POSITIVE_DATASET_DIR, detection.night || "unknown");
+  const metaDir = path.join(archiveDir, DATASET_META_DIRNAME);
   fs.mkdirSync(archiveDir, { recursive: true });
+  fs.mkdirSync(metaDir, { recursive: true });
 
   const sourceImagePath = path.join(
     PROCESSED_DIR,
@@ -62,7 +66,7 @@ export async function POST(req: NextRequest) {
       path.basename(detection.annotated_filename),
     );
     const archivedAnnotatedPath = path.join(
-      archiveDir,
+      metaDir,
       path.basename(detection.annotated_filename),
     );
 
@@ -72,7 +76,7 @@ export async function POST(req: NextRequest) {
   }
 
   const metadataPath = path.join(
-    archiveDir,
+    metaDir,
     `${path.parse(path.basename(detection.image)).name}.json`,
   );
   fs.writeFileSync(metadataPath, JSON.stringify(detection, null, 2), "utf-8");

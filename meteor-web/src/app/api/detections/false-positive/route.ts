@@ -15,6 +15,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const DATASET_META_DIRNAME = "_meta";
+
 export async function POST(req: NextRequest) {
   let body: { timestamp: string };
   try {
@@ -46,7 +48,10 @@ export async function POST(req: NextRequest) {
   const annotatedFile = removed.annotated_filename;
   const archiveDir = path.join(FALSE_POSITIVE_DIR, removed.night || "unknown");
   const positiveDir = path.join(POSITIVE_DATASET_DIR, removed.night || "unknown");
+  const metaDir = path.join(archiveDir, DATASET_META_DIRNAME);
+  const positiveMetaDir = path.join(positiveDir, DATASET_META_DIRNAME);
   fs.mkdirSync(archiveDir, { recursive: true });
+  fs.mkdirSync(metaDir, { recursive: true });
 
   const sourceImagePath = path.join(
     PROCESSED_DIR,
@@ -67,8 +72,9 @@ export async function POST(req: NextRequest) {
     if (fs.existsSync(filePath)) {
       try {
         const archivedAnnotatedPath = path.join(archiveDir, path.basename(annotatedFile));
-        if (!fs.existsSync(archivedAnnotatedPath)) {
-          fs.copyFileSync(filePath, archivedAnnotatedPath);
+        const archivedAnnotatedMetaPath = path.join(metaDir, path.basename(annotatedFile));
+        if (!fs.existsSync(archivedAnnotatedMetaPath)) {
+          fs.copyFileSync(filePath, archivedAnnotatedMetaPath);
         }
       } catch (err) {
         console.error("Impossible d'archiver l'image annotée:", filePath, err);
@@ -81,7 +87,7 @@ export async function POST(req: NextRequest) {
   }
 
   const metadataPath = path.join(
-    archiveDir,
+    metaDir,
     `${path.parse(path.basename(removed.image)).name}.json`,
   );
   fs.writeFileSync(metadataPath, JSON.stringify(removed, null, 2), "utf-8");
@@ -94,9 +100,14 @@ export async function POST(req: NextRequest) {
       positiveDir,
       `${path.parse(path.basename(removed.image)).name}.json`,
     ),
+    path.join(
+      positiveMetaDir,
+      `${path.parse(path.basename(removed.image)).name}.json`,
+    ),
   ];
   if (annotatedFile) {
     positiveArtifacts.push(path.join(positiveDir, path.basename(annotatedFile)));
+    positiveArtifacts.push(path.join(positiveMetaDir, path.basename(annotatedFile)));
   }
 
   for (const artifactPath of positiveArtifacts) {

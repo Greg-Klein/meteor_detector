@@ -28,6 +28,8 @@ export const POSITIVE_DATASET_DIR =
   process.env.POSITIVE_DATASET_DIR ||
   path.join(METEORS_ROOT, "dataset", "positives");
 
+const DATASET_META_DIRNAME = "_meta";
+
 function listJsonFiles(root: string): string[] {
   if (!fs.existsSync(root)) return [];
 
@@ -54,17 +56,27 @@ function resolveAnnotatedFilenameFromArchive(
   archiveDir: string,
   fallbackImageName: string,
 ): string | null {
-  const files = fs.readdirSync(archiveDir);
-  const imageStem = path.parse(fallbackImageName).name;
-  const annotated = files.find(
-    (name) =>
-      name.endsWith("_annotated.jpg") &&
-      path.parse(name).name.startsWith(`${imageStem}_`),
-  );
-  if (annotated) return annotated;
+  const searchDirs = [archiveDir];
+  const parentDir = path.dirname(archiveDir);
+  if (path.basename(archiveDir) === DATASET_META_DIRNAME) {
+    searchDirs.push(parentDir);
+  }
 
-  const jpg = files.find((name) => name === fallbackImageName);
-  return jpg || null;
+  const imageStem = path.parse(fallbackImageName).name;
+  for (const dir of searchDirs) {
+    const files = fs.readdirSync(dir);
+    const annotated = files.find(
+      (name) =>
+        name.endsWith("_annotated.jpg") &&
+        path.parse(name).name.startsWith(`${imageStem}_`),
+    );
+    if (annotated) return annotated;
+
+    const jpg = files.find((name) => name === fallbackImageName);
+    if (jpg) return jpg;
+  }
+
+  return null;
 }
 
 export function loadArchivedDetections(rootDir: string): Detection[] {
@@ -85,7 +97,11 @@ export function loadArchivedDetections(rootDir: string): Detection[] {
           detections: parsed.detections || [],
           annotated_filename:
             resolveAnnotatedFilenameFromArchive(archiveDir, imageName),
-          night: parsed.night || path.basename(path.dirname(jsonPath)),
+          night:
+            parsed.night ||
+            (path.basename(archiveDir) === DATASET_META_DIRNAME
+              ? path.basename(path.dirname(archiveDir))
+              : path.basename(archiveDir)),
         } satisfies Detection;
       } catch {
         return null;
