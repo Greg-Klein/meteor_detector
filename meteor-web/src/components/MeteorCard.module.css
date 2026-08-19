@@ -12,6 +12,11 @@
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.12);
 }
 
+.cardSelected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.22), 0 0 20px rgba(0, 212, 255, 0.12);
+}
+
 .imgWrap {
   position: relative;
   aspect-ratio: 4 / 3;
@@ -47,6 +52,32 @@
   background: rgba(0, 0, 0, 0.75);
   color: var(--accent);
   border-radius: 4px;
+}
+
+.selector {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+}
+
+.selector input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.selector input:disabled {
+  cursor: not-allowed;
 }
 
 .body {

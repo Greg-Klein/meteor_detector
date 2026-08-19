@@ -11,13 +11,25 @@ interface Props {
   detection: Detection;
   onFalsePositive?: () => void;
   onMarkPositive?: () => void;
+  selectable?: boolean;
+  selected?: boolean;
+  selectionDisabled?: boolean;
+  onToggleSelected?: () => void;
 }
 
 function formatTime(iso: string): string {
   return iso.replace("T", " ").slice(0, 19);
 }
 
-export default function MeteorCard({ detection, onFalsePositive, onMarkPositive }: Props) {
+export default function MeteorCard({
+  detection,
+  onFalsePositive,
+  onMarkPositive,
+  selectable = false,
+  selected = false,
+  selectionDisabled = false,
+  onToggleSelected,
+}: Props) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [markingPositive, setMarkingPositive] = useState(false);
@@ -31,11 +43,25 @@ export default function MeteorCard({ detection, onFalsePositive, onMarkPositive 
   return (
     <>
       <div
-        className={styles.card}
+        className={`${styles.card} ${selected ? styles.cardSelected : ""}`}
         onClick={() => imgSrc && setLightboxOpen(true)}
         style={{ cursor: imgSrc ? "pointer" : "default" }}
       >
         <div className={styles.imgWrap}>
+          {selectable && (
+            <label
+              className={styles.selector}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <input
+                type="checkbox"
+                checked={selected}
+                disabled={selectionDisabled}
+                onChange={onToggleSelected}
+                aria-label={`Sélectionner ${detection.image}`}
+              />
+            </label>
+          )}
           {imgSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

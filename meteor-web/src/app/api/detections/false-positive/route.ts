@@ -2,20 +2,9 @@
 // Archive un faux positif pour le dataset, puis le retire du JSON centralisé
 
 import { NextRequest, NextResponse } from "next/server";
-import path from "path";
-import fs from "fs";
-import {
-  loadDetections,
-  saveDetections,
-  ANNOTATED_DIR,
-  FALSE_POSITIVE_DIR,
-  POSITIVE_DATASET_DIR,
-  PROCESSED_DIR,
-} from "@/lib/data";
+import { archiveFalsePositiveDetection } from "@/lib/archiveDetection";
 
 export const dynamic = "force-dynamic";
-
-const DATASET_META_DIRNAME = "_meta";
 
 export async function POST(req: NextRequest) {
   let body: { timestamp: string };
@@ -35,90 +24,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const detections = loadDetections();
-  const index = detections.findIndex((d) => d.timestamp === timestamp);
-  if (index === -1) {
-    return NextResponse.json(
-      { error: "Détection non trouvée" },
-      { status: 404 }
-    );
+  const result = archiveFalsePositiveDetection(timestamp);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  const removed = detections[index];
-  const annotatedFile = removed.annotated_filename;
-  const archiveDir = path.join(FALSE_POSITIVE_DIR, removed.night || "unknown");
-  const positiveDir = path.join(POSITIVE_DATASET_DIR, removed.night || "unknown");
-  const metaDir = path.join(archiveDir, DATASET_META_DIRNAME);
-  const positiveMetaDir = path.join(positiveDir, DATASET_META_DIRNAME);
-  fs.mkdirSync(archiveDir, { recursive: true });
-  fs.mkdirSync(metaDir, { recursive: true });
-
-  const sourceImagePath = path.join(
-    PROCESSED_DIR,
-    removed.night || "unknown",
-    path.basename(removed.image),
-  );
-  const archivedImagePath = path.join(archiveDir, path.basename(removed.image));
-
-  if (fs.existsSync(sourceImagePath) && !fs.existsSync(archivedImagePath)) {
-    fs.copyFileSync(sourceImagePath, archivedImagePath);
-  }
-
-  const nextList = detections.filter((d) => d.timestamp !== timestamp);
-  saveDetections(nextList);
-
-  if (annotatedFile) {
-    const filePath = path.join(ANNOTATED_DIR, path.basename(annotatedFile));
-    if (fs.existsSync(filePath)) {
-      try {
-        const archivedAnnotatedPath = path.join(archiveDir, path.basename(annotatedFile));
-        const archivedAnnotatedMetaPath = path.join(metaDir, path.basename(annotatedFile));
-        if (!fs.existsSync(archivedAnnotatedMetaPath)) {
-          fs.copyFileSync(filePath, archivedAnnotatedMetaPath);
-        }
-      } catch (err) {
-        console.error("Impossible d'archiver l'image annotée:", filePath, err);
-        return NextResponse.json(
-          { ok: true, warning: "Détection retirée mais image annotée non archivée" },
-          { status: 200 }
-        );
-      }
-    }
-  }
-
-  const metadataPath = path.join(
-    metaDir,
-    `${path.parse(path.basename(removed.image)).name}.json`,
-  );
-  fs.writeFileSync(metadataPath, JSON.stringify(removed, null, 2), "utf-8");
-
-  // Retirer cette image du dataset des positifs si elle y avait été copiée automatiquement
-  // ou validée manuellement depuis le dashboard.
-  const positiveArtifacts = [
-    path.join(positiveDir, path.basename(removed.image)),
-    path.join(
-      positiveDir,
-      `${path.parse(path.basename(removed.image)).name}.json`,
-    ),
-    path.join(
-      positiveMetaDir,
-      `${path.parse(path.basename(removed.image)).name}.json`,
-    ),
-  ];
-  if (annotatedFile) {
-    positiveArtifacts.push(path.join(positiveDir, path.basename(annotatedFile)));
-    positiveArtifacts.push(path.join(positiveMetaDir, path.basename(annotatedFile)));
-  }
-
-  for (const artifactPath of positiveArtifacts) {
-    if (fs.existsSync(artifactPath)) {
-      try {
-        fs.unlinkSync(artifactPath);
-      } catch (err) {
-        console.error("Impossible de retirer l'artefact du dataset positif:", artifactPath, err);
-      }
-    }
-  }
-
-  return NextResponse.json({ ok: true });
+  return NextResponse.json(result);
 }
